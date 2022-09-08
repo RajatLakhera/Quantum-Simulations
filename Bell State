@@ -1,0 +1,17 @@
+import numpy as np
+from numpy import pi
+# Importing standard Qiskit libraries
+from qiskit import QuantumCircuit, transpile, assemble, Aer, IBMQ, execute
+from qiskit.quantum_info import Statevector
+from qiskit.visualization import plot_bloch_multivector, plot_histogram
+from qiskit_textbook.problems import dj_problem_oracle
+
+def bell_state():
+    qc = QuantumCircuit(2,2) 
+    qc.x(1)
+    qc.h(0)
+    qc.cx(0,1)
+    return qc
+
+qc = bell_state()
+qc.draw() #drawing the circuit
