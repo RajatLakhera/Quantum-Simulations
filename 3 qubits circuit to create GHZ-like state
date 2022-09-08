@@ -1,0 +1,27 @@
+import numpy as np
+from numpy import pi
+
+# Importing standard Qiskit libraries
+from qiskit import QuantumCircuit, transpile, assemble, Aer, IBMQ, execute
+from qiskit.quantum_info import Statevector
+from qiskit.visualization import plot_bloch_multivector, plot_histogram
+from qiskit_textbook.problems import dj_problem_oracle
+
+qc = QuantumCircuit(3,3) 
+    #
+    qc.h(0)
+    qc.x(2)
+    qc.cx(0,1)
+    qc.cx(0,2)
+    qc.z(2)
+    #
+    return qc
+
+qc = lab1_ex6()
+qc.draw() # we draw the circuit
+
+qc.measure_all() # we measure all the qubits
+backend = Aer.get_backend('qasm_simulator') # we choose the simulator as our backend
+counts = execute(qc, backend, shots = 1000).result().get_counts() # we run the simulation and get the counts
+plot_histogram(counts) # let us plot a histogram to see the possible outcomes and corresponding probabilities
+
