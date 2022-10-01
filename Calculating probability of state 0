@@ -1,0 +1,29 @@
+#Circuit to generate an equal superposition of quantum states
+
+qubits_count = 1
+cbits_count = 1
+quantum_register = qiskit.QuantumRegister(qubits_count)
+classical_register = qiskit.ClassicalRegister(cbits_count)
+circuit = qiskit.QuantumCircuit(quantum_register, classical_register)
+
+#Add a Hadamard gate and measurement
+circuit.h(0)
+circuit.measure(0,0)
+circuit.draw()
+
+#Different number of shots
+num_shots_list = [10, 100, 1000, 10000]
+
+# For each number of shots, extract the probability of |0> from the experimental counts
+p0_list = []
+for num_shots in num_shots_list:
+    
+    # Create a job, run on the simulator, extract the results and get the counts dictionary
+    job=execute(circuit, shots_backend, shots=num_shots)
+    result=job.result().get_counts()
+    p0 = result['0']/num_shots
+    p0_list.append(p0)    
+for num_shots, p0 in zip(num_shots_list, p0_list):
+    print(f"The probability of observing the 0 state with {num_shots} shots is: {p0}")
+
+
