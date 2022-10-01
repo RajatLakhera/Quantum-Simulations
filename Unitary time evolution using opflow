@@ -1,0 +1,17 @@
+#The XXX Heisenberg model
+def ex1_compute_H_heis3():
+    # FILL YOUR CODE IN HERE
+    H = (I^X^X)+(X^X^I)+(I^Y^Y)+(Y^Y^I)+(I^Z^Z)+(Z^Z^I)    # X,Y and Z are Pauli Matrices
+    # Return Hamiltonian
+    return H
+
+# Returns the time evolution operator U_heis3(t) for a given time t assuming an XXX Heisenberg Hamiltonian for 3 spins-1/2 particles in a line
+from qiskit.circuit import Parameter
+def ex2_compute_U_heis3(t):
+    # FILL YOUR CODE IN HERE
+    H = (I^X^X)+(X^X^I)+(I^Y^Y)+(Y^Y^I)+(I^Z^Z)+(Z^Z^I)
+    #time = Parameter('time')
+    U = (t*H).exp_i()
+    return U
+    
+#Using this time evolution operator, changes in a state of system can be simulated
