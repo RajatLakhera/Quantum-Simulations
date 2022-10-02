@@ -1,0 +1,115 @@
+# NOISE MODEL
+num_shots_measurement = 10000
+
+# Create an empty noise model
+readout_noise_model = NoiseModel()
+
+#mis-assignement probabilities
+p0given1 = 0.3 # Probability of measuuring |0> given the state is |1>
+p1given0 = 0.05 # Probability of measuring |1> given the state is |0>
+readout_error = ReadoutError([[1 - p1given0, p1given0], [p0given1, 1 - p0given1]]) # Define readout error
+readout_noise_model.add_readout_error(readout_error, [0]) # Add error to noise model
+
+circuit_0 = qiskit.QuantumCircuit(quantum_register, classical_register)
+qubits_count = 1
+cbits_count = 1
+
+quantum_register = qiskit.QuantumRegister(qubits_count)
+classical_register = qiskit.ClassicalRegister(cbits_count)
+
+circuit_0.measure(0,0)
+circuit_0.draw()
+
+#Prepare the qubit in |0> state and determine probability of observing the qubit in the |0> or |1> state
+job = shots_backend.run(circuit_0, shots=num_shots_measurement, noise_model=readout_noise_model)
+result = job.result()
+
+if '0' in result.get_counts().keys():
+    p0_0 = result.get_counts()['0']/num_shots_measurement
+else:
+    p0_0 = 1 - result.get_counts()['1']/num_shots_measurement
+
+p1_0 = 1 - p0_0
+
+print('Probability of measuring |0> when |0> is prepared:', p0_0)
+print('Probability of measuring |1> when |0> is prepared:', p1_0)
+
+
+#Prepare the qubit in the |1> state and determine the probability of observing the qubit in the |1> or |0> state
+circuit_1 = qiskit.QuantumCircuit(quantum_register, classical_register)
+qubits_count = 1
+cbits_count = 1
+quantum_register = qiskit.QuantumRegister(qubits_count)
+classical_register = qiskit.ClassicalRegister(cbits_count)
+
+circuit_1.x(0)
+circuit_1.measure(0,0)
+circuit_1.draw()
+
+job = shots_backend.run(circuit_1, shots=num_shots_measurement, noise_model=readout_noise_model)
+result = job.result()
+
+# Calculate probability of |0>
+if '0' in result.get_counts().keys():
+    p1_1 = 1 - result.get_counts()['0']/num_shots_measurement
+else:
+    p1_1 = result.get_counts()['1']/num_shots_measurement
+
+p0_1 = 1 - p1_1
+print('Probability of measuring |0> when |1> is prepared:', p0_1)
+print('Probability of measuring |1> when |1> is prepared:', p1_1)
+
+
+# CALCULATING CONFUSION MATRIX FROM ABOVE FOUND PROBABILITIES
+confusion_matrix = np.array([[p0_0,p0_1], [p1_0,p1_1]])
+
+print("Confusion matrix:")
+print(confusion_matrix)
+
+
+#MITIGATING THE RESULTS USING CONFUSION MATRIX
+job = shots_backend.run(circuit, shots=num_shots_measurement, noise_model=readout_noise_model)
+result = job.result()
+
+# Calculate probability of |0>
+if '0' in result.get_counts().keys():
+    p0_noisy = result.get_counts()['0']/num_shots_measurement
+    p1_noisy = 1 - p0_noisy
+else:
+    p0_noisy = 1 - result.get_counts()['1']/num_shots_measurement
+    p1_noisy = 1 - p0_noisy
+
+p_vector_noisy = np.array([p0_noisy, p1_noisy])
+print("Noisy probability of |0>: ", p0_noisy)
+print("Noisy probability of |1>: ", p1_noisy)
+
+# Invert the confusion matrix
+inverse_confusion_matrix = np.linalg.inv(confusion_matrix)
+
+# Mitigate the counts using the inverse of the confusion matrix
+p_vector_mitigated = inverse_confusion_matrix.dot(p_vector_noisy)
+np.clip(p_vector_mitigated, 0, 1)
+
+print("Mitigated probability of |0>: ", p_vector_mitigated[0])
+print("Mitigated probability of |1>: ", p_vector_mitigated[1])
+
+#cOMPARING THE RESULTS TO THAT OF AN IDEAL EXPERIMENT
+# Run ideal experiments
+job = shots_backend.run(circuit, shots=num_shots_measurement)
+# Extract results
+result = job.result()
+
+# Calculate probability of |0>
+if '0' in result.get_counts().keys():
+    p0_ideal = result.get_counts()['0']/num_shots_measurement
+    p1_ideal = 1 - p0_ideal
+else:
+    p0_ideal = 1 - result.get_counts()['1']/num_shots_measurement
+    p1_ideal = 1 - p0_ideal
+
+print("Ideal probability of |0>: ", p0_ideal)
+print("Ideal probability of |1>: ", p1_ideal)
+
+
+
+
