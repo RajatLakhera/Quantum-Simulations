@@ -1,0 +1,54 @@
+num_shots_coherent = 100
+
+# EMPTY NOISY MODEL
+rx_overrotation_noise_model = NoiseModel()
+# Over-rotation of the RX gate
+epsilon = np.pi/5 # over rotation amount
+epsilon_rotation = RXGate(epsilon).to_matrix() # get matrix representation
+
+
+# CREATE COHERENT ERROR
+over_rotation = coherent_unitary_error(epsilon_rotation)
+# Add error to error model
+rx_overrotation_noise_model.add_quantum_error(over_rotation, ['rx'], qubits = [0])
+theta_value = np.pi
+# Instantiate a quantum circuit
+circuit = qiskit.QuantumCircuit(quantum_register, classical_register)
+
+# Add a parametrized RX rotation and bind the value of the parameter. (By default, parameter binding is not an in-place operation)
+# Then measure the qubit and calculate probability of seeing |0> after rx(np.pi) 
+from qiskit.circuit import Parameter
+from qiskit import QuantumCircuit, transpile, assemble, Aer, IBMQ, execute
+theta = Parameter('theta')
+
+qubits_count = 1
+cbits_count = 1
+quantum_register = qiskit.QuantumRegister(qubits_count)
+classical_register = qiskit.ClassicalRegister(cbits_count)
+circuit.rx(theta,0)
+circuit.measure(0,0)
+circuit.draw()
+
+circuit = circuit.bind_parameters({theta: theta_value})
+print(circuit)
+
+shots_backend = qiskit.Aer.get_backend('qasm_simulator')
+job=execute(circuit, shots_backend, shots=num_shots_coherent)
+result=job.result()
+counts = result.get_counts()
+p0 = counts['0']/num_shots_coherent
+
+
+# CALCULATING THE NOISY OUTCOMES
+job = shots_backend.run(circuit, shots=num_shots_coherent, noise_model=rx_overrotation_noise_model)
+# Extract results
+result = job.result()
+
+# Calculate the probability of |0>
+if '0' in result.get_counts().keys():
+    p0 = result.get_counts()['0']/num_shots_coherent
+else:
+    p0 = 1 - result.get_counts()['1']/num_shots_coherent
+
+print("Noisy probability of |0> after coherent error in idling: ", p0)
+print("Noisy probability of |1> after coherent error in idling: ", 1-p0)
